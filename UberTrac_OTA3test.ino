@@ -814,6 +814,7 @@ if (millis() > send_millis + loopDelay & m==3) {
 
   for (const char *c : attributes) {
     client.subscribe(c);
+    Serial.print(c), Serial.print(": "), Serial.println(client.state());
   }
 
   client.loop();
