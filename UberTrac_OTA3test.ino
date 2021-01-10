@@ -121,13 +121,6 @@ const char* period[4] = { "1.0", "1.0", "0.5", "2.0" };
 byte l = 0; //*/
 
 // Internal Temperature sensor setup
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
 uint8_t temprature_sens_read();
 
 
