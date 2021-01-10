@@ -273,7 +273,6 @@ RPC_Response processGetElement(const RPC_Data &data) {
     Serial.println(enabled);
   return RPC_Response(NULL, enabled); }
 
-
 RPC_Response processSetHoliday(const RPC_Data &data) {
   Serial.println("Received the set Holiday RPC method");
   bool enabled = data; //["params"];
@@ -282,6 +281,7 @@ RPC_Response processSetHoliday(const RPC_Data &data) {
     holiday = enabled;
   return RPC_Response(NULL, (bool)data);
 }
+
 RPC_Response processGetHoliday(const RPC_Data &data) {
   Serial.println("Received the get Holiday request");
     Serial.print("Get Holiday state: ");
