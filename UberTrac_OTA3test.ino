@@ -816,10 +816,13 @@ if (millis() > send_millis + loopDelay & m==3) {
 
   // read every attribute for each slot  
   for (const char *c : attributes) {
-    int8_t i = 0;
     
-    // read slot for the chosen attribute
-    while (pubSubClient.subscribe(c + i+1)) {
+    // read slot for the next attribute
+    for (int8_t i = 1; i < 5; ++i) {
+      pubSubClient.subscribe(c + (i+1));
+      #ifdef DoBUG
+      Serial.print(i);
+      #endif
       // add more slots to list 
       while (slots.size() < i+1) slots.push_back(Slot());
       // copy attribute to the list member slot 
@@ -828,7 +831,6 @@ if (millis() > send_millis + loopDelay & m==3) {
       if (c == "Temp") slots[i].Temp = stream.parseFloat();
       if (c == "Dur")  slots[i].Duration = stream.parseFloat();
       // go to the next slot
-      i++;
     };
     // next attribute else exit loop
   }
