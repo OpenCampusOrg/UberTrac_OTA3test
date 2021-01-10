@@ -121,8 +121,13 @@ const char* period[4] = { "1.0", "1.0", "0.5", "2.0" };
 byte l = 0; //*/
 
 // Internal Temperature sensor setup
-uint8_t temprature_sens_read();
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
 
 // Initialize Wifi Client.
 int status = WL_IDLE_STATUS;
