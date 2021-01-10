@@ -12,15 +12,15 @@ const char* upDated = "2019/06/10"; //version
 #include <ESPmDNS.h>
 #include <Update.h>
 #endif
-#include <WiFi.h>
-#include <WiFiClient.h>
+#include <StreamString.h>
 #include <ThingSpeak.h>
 #include <ThingsBoard.h>
 #include <TimeLib.h>
 #include <TimeAlarms.h>
-#include <WiFiUdp.h>
-
 #include <vector>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiUdp.h>
 
 using namespace std; // std::vector
 
@@ -149,10 +149,12 @@ WiFiClient speakClient;
 ThingsBoard tb(wifiClient);
 
 // Initialize Stream instance
-Stream stream; 
+StreamString m_stream;
+// Define a reference to Stream instance
+Stream& stream = m_stream;
 
 // Initialize PubSubClient instance
-PubSubClient client(chipIP, 8888, wifiClient, &stream);
+PubSubClient pubSubClient(chipIP, 8888, wifiClient, stream);
 
 // For OTA programming
 #ifdef DoOTA
@@ -761,8 +763,8 @@ if (millis() > send_millis + loopDelay & m==3) {
     String clientId = "ESP32Client-";
     clientId += String(random(0xffff), HEX);
     // Loop until we're reconnected
-    while (!client.connected()) {
-      client.connect(clientId.c_str());
+    while (!pubSubClient.connected()) {
+      pubSubClient.connect(clientId.c_str());
       delay(5000);
     }
 
@@ -804,7 +806,7 @@ if (millis() > send_millis + loopDelay & m==3) {
   // list (dynamic sized array) of attributes
   auto attributes = vector<const char*>(); 
   // list (dynamic sized array) of slots
-  auto slots = vector<Slot& const>();
+  auto slots = vector<Slot>();
 
   // add attributes to list 
   attributes.push_back("Day");
@@ -817,14 +819,14 @@ if (millis() > send_millis + loopDelay & m==3) {
     int8_t i = 0;
     
     // read slot for the chosen attribute
-    while (client.subscribe(c + i+1)) {
+    while (pubSubClient.subscribe(c + i+1)) {
       // add more slots to list 
       while (slots.size() < i+1) slots.push_back(Slot());
       // copy attribute to the list member slot 
-      if (c == "Day") slots[i].Day = stream.readString();
-      if (c == "Tim") slots[i].Time = stream.readString();
+      if (c == "Day")  slots[i].Day = stream.readString();
+      if (c == "Tim")  slots[i].Time = stream.readString();
       if (c == "Temp") slots[i].Temp = stream.parseFloat();
-      if (c == "Dur") slots[i].Duration = stream.parseFloat();
+      if (c == "Dur")  slots[i].Duration = stream.parseFloat();
       // go to the next slot
       i++;
     };
@@ -847,7 +849,7 @@ if (millis() > send_millis + loopDelay & m==3) {
     }
 #endif
 
-  client.loop();
+  pubSubClient.loop();
 //    tb.loop();
 
     digitalWrite(LED, LOW);
