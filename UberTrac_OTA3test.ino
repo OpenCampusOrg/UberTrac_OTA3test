@@ -20,6 +20,10 @@ const char* upDated = "2019/06/10"; //version
 #include <TimeAlarms.h>
 #include <WiFiUdp.h>
 
+#include <vector>
+
+using namespace std; // std::vector
+
 #define DoSEND // comment out to disable Sending to ThingSpeak and ThingsBoard
 // for ThingsBoard
 #define token "A4I2hkDVaUO13s8HPeVn"// UberTrac Test, "ujkNqsZpmmEPABGvFA79" // Main House Solar Geyser
@@ -742,24 +746,53 @@ if (millis() > send_millis + loopDelay & m==3) {
 //  ThingSpeak.setField(3,adcA6); // Header adc
   ThingSpeak.writeFields(165321, "141K163R0MBQ1GMI"); // test channel */
     
+    // Create a random client ID
+    String clientId = "ESP32Client-";
+    clientId += String(random(0xffff), HEX);
+    // Loop until we're reconnected
+    while (!client.connected()) {
+      client.connect(clientId.c_str());
+      delay(5000);
+    }
+
+    auto attributes = vector<const char*>(); // list (dynamic sized array) of attributes
+
     tb.sendTelemetryFloat("Mid temp", tempA0);
+    attributes.push_back("Mid temp");
     tb.sendTelemetryFloat("Top temp", tempA1);
+    attributes.push_back("Top temp");
     tb.sendTelemetryFloat("Bot temp", tempA2);
+    attributes.push_back("Bot temp");
     tb.sendTelemetryFloat("sOUTlet temp", tempA3);
+    attributes.push_back("sOUTlet temp");
     tb.sendTelemetryFloat("sINlet temp", tempA4);
+    attributes.push_back("sINlet temp");
     tb.sendTelemetryFloat("Roof temp", tempA5);
+    attributes.push_back("Roof temp");
     tb.sendTelemetryFloat("Manifold", tempA6);
+    attributes.push_back("Manifold");
     tb.sendTelemetryFloat("Out Air", tempA7);
+    attributes.push_back("Out Air");
     tb.sendTelemetryFloat("Light Lux", luxA8);
+    attributes.push_back("Light Lux");
     tb.sendTelemetryFloat("Chip temp", intTemp);
+    attributes.push_back("Chip temp");
     tb.sendTelemetryFloat("Avg", tempAvg);
+    attributes.push_back("Avg");
     tb.sendTelemetryFloat("Panel V", voltA9);
+    attributes.push_back("Panel V");
     tb.sendTelemetryFloat("Hours", hours);
+    attributes.push_back("Hours");
     tb.sendTelemetryInt("rssi", rssi);
+    attributes.push_back("rssi");
     tb.sendTelemetryInt("Pump", pumpState);
+    attributes.push_back("Pump");
     tb.sendTelemetryInt("Element", elementState); // tb.sendTelemetryBool( )
+    attributes.push_back("Element");
     tb.sendTelemetryInt("min", minute());
+    attributes.push_back("min");
     tb.sendTelemetryInt("Holiday", holiday);
+    attributes.push_back("Holiday");
 /*    if (hours < 0.05) { tb.sendTelemetryString("Dated", upDated); 
         String ipaddress = WiFi.localIP().toString();
         char ipchar[ipaddress.length()+1];
@@ -774,10 +807,16 @@ if (millis() > send_millis + loopDelay & m==3) {
     tb.sendTelemetryString("tempSet", temp[l]);
     tb.sendTelemetryString("Period", period[l]); //*/
   tb.sendTelemetryFloat("temperature", random(10,40));
+  attributes.push_back("temperature");
 
   tb.sendAttributeString("Timer1", upDated);
-  
-    
+  attributes.push_back("Timer1");
+
+  for (const char *c : attributes) {
+    client.subscribe(c);
+  }
+
+  client.loop();
 //    tb.loop();
 
     digitalWrite(LED, LOW);
