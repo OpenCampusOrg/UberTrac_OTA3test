@@ -941,10 +941,10 @@ time_t getNtpTime()
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
       // convert four bytes starting at location 40 to a long integer
-      secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
-      secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
-      secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
-      secsSince1900 |= (unsigned long)packetBuffer[43];
+      secsSince1900 =  packetBuffer[40] << 24;
+      secsSince1900 |= packetBuffer[41] << 16;
+      secsSince1900 |= packetBuffer[42] << 8;
+      secsSince1900 |= packetBuffer[43];
       return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
     }
   }
