@@ -99,7 +99,7 @@ unsigned long elementMillis, elementPeriod, send_millis=0, for_millis=0;
 const int luxLimit = 100; // Lux treashold when element will turn ON
 int luxPrevious = 0;
 //char ipchar;
-String chipIP;
+IPAddress chipIP = WiFi.localIP();
 // Set to true if application is subscribed for the RPC messages.
 bool subscribed = false;
 // We assume that all GPIOs are LOW
@@ -137,6 +137,8 @@ WiFiClient speakClient;
 // Initialize ThingsBoard instance
 ThingsBoard tb(wifiClient);
 
+// Initialize PubSubClient instance
+PubSubClient client(chipIP, 8888, wifiClient);
 
 // For OTA programming
 #ifdef DoOTA
@@ -343,8 +345,6 @@ void setup() { // #############################################################
 
   checkWiFi(); // Check for the connetion else Reset
 
-//  chipIP  =  WiFi.localIP().toString().c_str();
-
   // once you are connected :
   #ifdef DoBUG
 //  Serial.print("You're connected to the network");
@@ -435,10 +435,10 @@ void setup() { // #############################################################
     Serial.println("Subscribe done"); subscribed = true; }
       
     tb.sendTelemetryString("Dated", upDated); 
-        String ipaddress = WiFi.localIP().toString();
-        char ipchar[ipaddress.length()+1];
-        ipaddress.toCharArray(ipchar,ipaddress.length()+1);
-    tb.sendTelemetryString("chipIP", ipchar);
+        // String ipaddress = chipIP;
+        // char ipchar[ipaddress.length()+1];
+        // ipchar, ipaddress.toCharArray(ipchar,ipaddress.length()+1);
+    tb.sendTelemetryString("chipIP", chipIP.toString().c_str());
     tb.loop();
 #endif //*/
   
@@ -990,3 +990,10 @@ void OTAdelay (unsigned int mstime) {
     #endif
     Alarm.delay(10);
 } } // End Function */
+
+/*
+I require detailed instructions of how to send input attributes from ThingsBoard to ESP32 device, and the Arduino IDE code required for the ESP32 to receive the input attributes so it can use them within the sketch.
+I am using the thingsboard.h library to send telemetry data the other way, so I would prefer if the code uses this as well but its not essential. I can send attributes from the device to Thingsboard but not the other way.
+I would like to learn how to do this. The tutorials available from Thingsboard do not cover exactly what I need.
+*/
+
