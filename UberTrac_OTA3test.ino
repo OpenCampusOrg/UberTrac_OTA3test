@@ -103,7 +103,7 @@ unsigned long elementMillis, elementPeriod, send_millis=0, for_millis=0;
 const int luxLimit = 100; // Lux treashold when element will turn ON
 int luxPrevious = 0;
 //char ipchar;
-IPAddress chipIP = WiFi.localIP();
+IPAddress chipIP;
 // Set to true if application is subscribed for the RPC messages.
 bool subscribed = false;
 // We assume that all GPIOs are LOW
@@ -124,6 +124,13 @@ const char* temp[4] = { "50", "45", "40", "55" };
 const char* period[4] = { "1.0", "1.0", "0.5", "2.0" };
 byte l = 0; //*/
 
+struct Slot {
+  String Day;
+  String Time;
+  float Temp;
+  float Duration; 
+};
+
 // Internal Temperature sensor setup
 #ifdef __cplusplus
 extern "C" {
@@ -141,8 +148,11 @@ WiFiClient speakClient;
 // Initialize ThingsBoard instance
 ThingsBoard tb(wifiClient);
 
+// Initialize Stream instance
+Stream stream; 
+
 // Initialize PubSubClient instance
-PubSubClient client(chipIP, 8888, wifiClient);
+PubSubClient client(chipIP, 8888, wifiClient, &stream);
 
 // For OTA programming
 #ifdef DoOTA
@@ -350,6 +360,7 @@ void setup() { // #############################################################
   checkWiFi(); // Check for the connetion else Reset
 
   // once you are connected :
+  chipIP = WiFi.localIP();
   #ifdef DoBUG
 //  Serial.print("You're connected to the network");
     printCurrentSSID();
@@ -755,44 +766,24 @@ if (millis() > send_millis + loopDelay & m==3) {
       delay(5000);
     }
 
-    auto attributes = vector<const char*>(); // list (dynamic sized array) of attributes
-
     tb.sendTelemetryFloat("Mid temp", tempA0);
-    attributes.push_back("Mid temp");
     tb.sendTelemetryFloat("Top temp", tempA1);
-    attributes.push_back("Top temp");
     tb.sendTelemetryFloat("Bot temp", tempA2);
-    attributes.push_back("Bot temp");
     tb.sendTelemetryFloat("sOUTlet temp", tempA3);
-    attributes.push_back("sOUTlet temp");
     tb.sendTelemetryFloat("sINlet temp", tempA4);
-    attributes.push_back("sINlet temp");
     tb.sendTelemetryFloat("Roof temp", tempA5);
-    attributes.push_back("Roof temp");
     tb.sendTelemetryFloat("Manifold", tempA6);
-    attributes.push_back("Manifold");
     tb.sendTelemetryFloat("Out Air", tempA7);
-    attributes.push_back("Out Air");
     tb.sendTelemetryFloat("Light Lux", luxA8);
-    attributes.push_back("Light Lux");
     tb.sendTelemetryFloat("Chip temp", intTemp);
-    attributes.push_back("Chip temp");
     tb.sendTelemetryFloat("Avg", tempAvg);
-    attributes.push_back("Avg");
     tb.sendTelemetryFloat("Panel V", voltA9);
-    attributes.push_back("Panel V");
     tb.sendTelemetryFloat("Hours", hours);
-    attributes.push_back("Hours");
     tb.sendTelemetryInt("rssi", rssi);
-    attributes.push_back("rssi");
     tb.sendTelemetryInt("Pump", pumpState);
-    attributes.push_back("Pump");
     tb.sendTelemetryInt("Element", elementState); // tb.sendTelemetryBool( )
-    attributes.push_back("Element");
     tb.sendTelemetryInt("min", minute());
-    attributes.push_back("min");
     tb.sendTelemetryInt("Holiday", holiday);
-    attributes.push_back("Holiday");
 /*    if (hours < 0.05) { tb.sendTelemetryString("Dated", upDated); 
         String ipaddress = WiFi.localIP().toString();
         char ipchar[ipaddress.length()+1];
@@ -807,15 +798,54 @@ if (millis() > send_millis + loopDelay & m==3) {
     tb.sendTelemetryString("tempSet", temp[l]);
     tb.sendTelemetryString("Period", period[l]); //*/
   tb.sendTelemetryFloat("temperature", random(10,40));
-  attributes.push_back("temperature");
 
   tb.sendAttributeString("Timer1", upDated);
-  attributes.push_back("Timer1");
 
+  // list (dynamic sized array) of attributes
+  auto attributes = vector<const char*>(); 
+  // list (dynamic sized array) of slots
+  auto slots = vector<Slot& const>();
+
+  // add attributes to list 
+  attributes.push_back("Day");
+  attributes.push_back("Tim");
+  attributes.push_back("Temp");
+  attributes.push_back("Dur");
+
+  // read every attribute for each slot  
   for (const char *c : attributes) {
-    client.subscribe(c);
-    Serial.print(c), Serial.print(": "), Serial.println(client.state());
+    int8_t i = 0;
+    
+    // read slot for the chosen attribute
+    while (client.subscribe(c + i+1)) {
+      // add more slots to list 
+      while (slots.size() < i+1) slots.push_back(Slot());
+      // copy attribute to the list member slot 
+      if (c == "Day") slots[i].Day = stream.readString();
+      if (c == "Tim") slots[i].Time = stream.readString();
+      if (c == "Temp") slots[i].Temp = stream.parseFloat();
+      if (c == "Dur") slots[i].Duration = stream.parseFloat();
+      // go to the next slot
+      i++;
+    };
+    // next attribute else exit loop
   }
+
+#ifdef DoBUG
+    for (int i=0; i < slots.size(); ++i) {
+      Serial.print("slot ");
+      Serial.print(i);
+      Serial.print(": [");
+      Serial.print(slots[i].Day);
+      Serial.print(", ");
+      Serial.print(slots[i].Time);
+      Serial.print(", ");
+      Serial.print(slots[i].Temp);
+      Serial.print(", ");
+      Serial.print(slots[i].Duration); 
+      Serial.println("]");
+    }
+#endif
 
   client.loop();
 //    tb.loop();
